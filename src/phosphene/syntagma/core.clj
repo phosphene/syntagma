@@ -18,8 +18,8 @@
 
 ;; --- 1. Strict Sequence (Contiguous Factor Inclusion) ---
 
-(defn strict-subsequence?
-  "Returns true if target vector appears as a contiguous factor/subslice of frame."
+(defn factor?
+  "Returns true if target vector appears as a contiguous factor (subword) of frame."
   [target frame]
   (let [m (count target)
         n (count frame)]
@@ -31,19 +31,25 @@
                       (= target (subvec frame i (+ i m))))
                     (range (inc (- n m))))))))
 
+(def ^{:doc "Alias for factor? honoring classical subsequence terminology."}
+  strict-subsequence? factor?)
+
 ;; --- 2. Equivalence-Class Sequence (Quotiented Mapping) ---
 
-(defn equiv-subsequence?
+(defn equiv-factor?
   "Returns true if the projection of target under equiv-fn appears
    as a contiguous factor in the projection of frame under equiv-fn."
   [target frame equiv-fn]
   (let [proj-target (mapv equiv-fn target)
         proj-frame (mapv equiv-fn frame)]
-    (strict-subsequence? proj-target proj-frame)))
+    (factor? proj-target proj-frame)))
+
+(def ^{:doc "Alias for equiv-factor?."}
+  equiv-subsequence? equiv-factor?)
 
 ;; --- 3. Loose Sequence (Monotonic Poset Order / Subsequence) ---
 
-(defn loose-subsequence?
+(defn subsequence?
   "Returns true if elements of target appear in frame in strictly ascending index order
    (monotonic precedence), allowing arbitrary intervening tokens."
   [target frame]
@@ -58,13 +64,19 @@
         :else
         (recur t-idx (inc f-idx))))))
 
+(def ^{:doc "Alias for subsequence?."}
+  loose-subsequence? subsequence?)
+
 ;; --- 4. Framed Conjunction (Unordered Co-presence) ---
 
-(defn framed-conjunction?
+(defn conjunction?
   "Returns true if all distinct elements of target exist within frame,
    disregarding order and multiplicity."
   [target frame]
   (set/subset? (set target) (set frame)))
+
+(def ^{:doc "Alias for conjunction?."}
+  framed-conjunction? conjunction?)
 
 ;; --- Hierarchy of Constraint Check ---
 
@@ -76,7 +88,7 @@
      :none         - not satisfied"
   [target frame]
   (cond
-    (strict-subsequence? target frame) :strict
-    (loose-subsequence? target frame)  :loose
-    (framed-conjunction? target frame) :conjunction
-    :else :none))
+    (factor? target frame)      :strict
+    (subsequence? target frame) :loose
+    (conjunction? target frame) :conjunction
+    :else                       :none))
