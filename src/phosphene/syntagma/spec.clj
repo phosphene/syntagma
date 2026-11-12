@@ -59,30 +59,46 @@
 
 ;; --- 2. Function Specs: Core Relational Ladder ---
 
-(s/fdef core/strict-subsequence?
+(s/fdef core/factor?
   :args (s/cat :target ::sequence :frame ::frame)
   :ret boolean?
   :fn (fn [{:keys [args ret]}]
         (let [{:keys [target frame]} args]
-          ;; Invariant: if strict holds, loose and conjunction must also hold
+          ;; Invariant: if factor holds, subsequence and conjunction must also hold
           (if ret
-            (and (core/loose-subsequence? target frame)
-                 (core/framed-conjunction? target frame))
+            (and (core/subsequence? target frame)
+                 (core/conjunction? target frame))
             true))))
+
+(s/fdef core/strict-subsequence?
+  :args (s/cat :target ::sequence :frame ::frame)
+  :ret boolean?)
+
+(s/fdef core/equiv-factor?
+  :args (s/cat :target ::sequence :frame ::frame :equiv-fn ::equiv-fn)
+  :ret boolean?)
 
 (s/fdef core/equiv-subsequence?
   :args (s/cat :target ::sequence :frame ::frame :equiv-fn ::equiv-fn)
   :ret boolean?)
 
-(s/fdef core/loose-subsequence?
+(s/fdef core/subsequence?
   :args (s/cat :target ::sequence :frame ::frame)
   :ret boolean?
   :fn (fn [{:keys [args ret]}]
         (let [{:keys [target frame]} args]
-          ;; Invariant: if loose holds, framed conjunction must hold
+          ;; Invariant: if subsequence holds, conjunction must hold
           (if ret
-            (core/framed-conjunction? target frame)
+            (core/conjunction? target frame)
             true))))
+
+(s/fdef core/loose-subsequence?
+  :args (s/cat :target ::sequence :frame ::frame)
+  :ret boolean?)
+
+(s/fdef core/conjunction?
+  :args (s/cat :target ::sequence :frame ::frame)
+  :ret boolean?)
 
 (s/fdef core/framed-conjunction?
   :args (s/cat :target ::sequence :frame ::frame)
@@ -94,15 +110,15 @@
   :fn (fn [{:keys [args ret]}]
         (let [{:keys [target frame]} args]
           (case ret
-            :strict (and (core/strict-subsequence? target frame)
-                         (core/loose-subsequence? target frame)
-                         (core/framed-conjunction? target frame))
-            :loose (and (not (core/strict-subsequence? target frame))
-                        (core/loose-subsequence? target frame)
-                        (core/framed-conjunction? target frame))
-            :conjunction (and (not (core/loose-subsequence? target frame))
-                              (core/framed-conjunction? target frame))
-            :none (not (core/framed-conjunction? target frame))))))
+            :strict (and (core/factor? target frame)
+                         (core/subsequence? target frame)
+                         (core/conjunction? target frame))
+            :loose (and (not (core/factor? target frame))
+                        (core/subsequence? target frame)
+                        (core/conjunction? target frame))
+            :conjunction (and (not (core/subsequence? target frame))
+                              (core/conjunction? target frame))
+            :none (not (core/conjunction? target frame))))))
 
 ;; --- 3. Function Specs: Lattice & Poset Operations ---
 
