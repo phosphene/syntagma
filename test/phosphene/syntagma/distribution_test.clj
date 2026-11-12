@@ -1,8 +1,8 @@
 (ns phosphene.syntagma.distribution-test
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]
-            [phosphene.syntagma.distribution :as dist]))
+            [phosphene.syntagma.distribution :as dist]
+            [phosphene.syntagma.spec :as syntagma-spec]))
 
 (deftest distribution-primitives-test
   (testing "Sliding windows partitioning"
@@ -29,3 +29,16 @@
                   [:faraday :skips :other :tokens :magnetic :finally :curve]]
           freq (dist/loose-sequence-frequency [:faraday :magnetic :curve] frames)]
       (is (= 2 freq)))))
+
+(deftest generative-distribution-check-test
+  (testing "Generative property checks for distributional primitives"
+    (let [res (stest/check [`dist/sliding-windows
+                            `dist/framed-conjunction-frequency
+                            `dist/loose-sequence-frequency]
+                           {:clojure.spec.test.check/opts {:num-tests 100}})]
+      (doseq [r res]
+        (let [sym (:sym r)
+              check-ret (:clojure.spec.test.check/ret r)
+              err (:error check-ret)]
+          (is (nil? err) (str "Generative check failed for " sym ": " (pr-str check-ret)))
+          (is (true? (:result check-ret)) (str "Check was not true for " sym)))))))

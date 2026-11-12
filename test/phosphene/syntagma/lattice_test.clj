@@ -1,29 +1,9 @@
 (ns phosphene.syntagma.lattice-test
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]
             [phosphene.syntagma.core :as core]
-            [phosphene.syntagma.lattice :as lattice]))
-
-;; --- Specs for lattice ---
-
-(s/fdef lattice/longest-common-factor
-  :args (s/cat :a ::core/sequence :b ::core/sequence)
-  :ret ::core/sequence
-  :fn (fn [{:keys [args ret]}]
-        (let [{:keys [a b]} args]
-          ;; Meet invariant: ret must be a strict factor of both a and b
-          (and (core/strict-subsequence? ret a)
-               (core/strict-subsequence? ret b)))))
-
-(s/fdef lattice/shortest-common-supersequence
-  :args (s/cat :a ::core/sequence :b ::core/sequence)
-  :ret ::core/sequence
-  :fn (fn [{:keys [args ret]}]
-        (let [{:keys [a b]} args]
-          ;; Join invariant: ret must contain both a and b as loose monotonic subsequences
-          (and (core/loose-subsequence? a ret)
-               (core/loose-subsequence? b ret)))))
+            [phosphene.syntagma.lattice :as lattice]
+            [phosphene.syntagma.spec :as syntagma-spec]))
 
 (deftest unit-lattice-test
   (testing "Longest common factor (meet)"
@@ -59,10 +39,13 @@
       (is (not (contains? edges [[:unrelated] [:faraday]]))))))
 
 (deftest generative-lattice-check-test
-  (testing "Generative property-based testing of lattice meets and joins"
+  (testing "Generative property-based testing of lattice meets, joins, prefixes, and poset edges"
     (let [res (stest/check [`lattice/longest-common-factor
-                            `lattice/shortest-common-supersequence]
-                           {:clojure.spec.test.check/opts {:num-tests 50}})]
+                            `lattice/prefix?
+                            `lattice/suffix?
+                            `lattice/shortest-common-supersequence
+                            `lattice/subword-poset-edges]
+                           {:clojure.spec.test.check/opts {:num-tests 100}})]
       (doseq [r res]
         (let [sym (:sym r)
               check-ret (:clojure.spec.test.check/ret r)
