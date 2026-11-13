@@ -1,10 +1,12 @@
 (ns phosphene.syntagma.spec
   "Formal specification, property invariants, and dense generators for phosphene.syntagma."
-  (:require [clojure.spec.alpha :as s]
+  (:require [clojure.set :as set]
+            [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as gen]
             [phosphene.syntagma.core :as core]
             [phosphene.syntagma.lattice :as lattice]
-            [phosphene.syntagma.distribution :as dist]))
+            [phosphene.syntagma.distribution :as dist]
+            [phosphene.syntagma.morphism :as morphism]))
 
 ;; --- 1. Dense Generators & Alphabet Invariants ---
 
@@ -56,6 +58,16 @@
          (gen/bind (gen/vector (s/gen ::token) 0 6)
            (fn [t]
              (gen/return [t f])))]))))
+
+(s/def ::morphism
+  (s/with-gen
+    (s/and map?
+           #(contains? % :morphism/id)
+           #(contains? % :morphism/mapping))
+    #(gen/fmap (fn [m] (morphism/vocabulary-morphism :morphism/test m))
+               (gen/map (s/gen ::token)
+                        (gen/elements [:A :B :C :D :E])
+                        {:min-elements 1 :max-elements 6}))))
 
 ;; --- 2. Function Specs: Core Relational Ladder ---
 
@@ -224,3 +236,37 @@
                :vec-b (s/with-gen (s/map-of keyword? number?)
                         #(gen/map (gen/elements [:a :b :c :d]) (gen/choose 1 10) {:max-elements 4})))
   :ret (s/and number? #(<= -1.0001 % 1.0001)))
+
+;; --- 5. Function Specs: Relational Morphisms (T-SYN-007) ---
+
+(s/fdef morphism/map-sequence
+  :args (s/cat :morphism ::morphism :seq-tokens ::sequence)
+  :ret ::sequence
+  :fn (fn [{:keys [args ret]}]
+        (= (count (:seq-tokens args)) (count ret))))
+
+(s/fdef morphism/factor-preserving?
+  :args (s/cat :morphism ::morphism :target ::sequence :frame ::frame)
+  :ret boolean?)
+
+(s/fdef morphism/subsequence-preserving?
+  :args (s/cat :morphism ::morphism :target ::sequence :frame ::frame)
+  :ret boolean?
+  :fn (fn [{:keys [ret]}]
+        (boolean? ret)))
+
+(s/fdef morphism/conjunction-preserving?
+  :args (s/cat :morphism ::morphism :target ::sequence :frame ::frame)
+  :ret boolean?)
+
+(s/fdef morphism/order-preserving?
+  :args (s/cat :morphism ::morphism :target ::sequence :frame ::frame)
+  :ret boolean?)
+
+(s/fdef morphism/relational-fidelity
+  :args (s/cat :morphism ::morphism :target ::sequence :frame ::frame)
+  :ret (s/keys :req-un [::source-tier ::target-tier ::preserved? ::degraded? ::amplified?])
+  :fn (fn [{:keys [ret]}]
+        (and (boolean? (:preserved? ret))
+             (boolean? (:degraded? ret))
+             (boolean? (:amplified? ret)))))

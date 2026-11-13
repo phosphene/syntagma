@@ -6,6 +6,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [phosphene.syntagma.core :as core]
+            [phosphene.syntagma.morphism :as morphism]
             [phosphene.syntagma.spec :as syntagma-spec]))
 
 (deftest unit-relational-tiers-test
@@ -48,7 +49,13 @@
     (let [check-results (stest/check [`core/strict-subsequence?
                                       `core/loose-subsequence?
                                       `core/framed-conjunction?
-                                      `core/relational-tier]
+                                      `core/relational-tier
+                                      `morphism/map-sequence
+                                      `morphism/factor-preserving?
+                                      `morphism/subsequence-preserving?
+                                      `morphism/conjunction-preserving?
+                                      `morphism/order-preserving?
+                                      `morphism/relational-fidelity]
                                      {:clojure.spec.test.check/opts {:num-tests 150}})]
       (doseq [res check-results]
         (let [sym (:sym res)

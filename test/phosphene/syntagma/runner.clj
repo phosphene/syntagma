@@ -3,6 +3,7 @@
             [phosphene.syntagma.core-test]
             [phosphene.syntagma.distribution-test]
             [phosphene.syntagma.lattice-test]
+            [phosphene.syntagma.morphism-test]
             [phosphene.syntagma.io.markdown-test]))
 
 (defn -main [& _args]
@@ -10,6 +11,7 @@
   (let [summary (run-tests 'phosphene.syntagma.core-test
                            'phosphene.syntagma.distribution-test
                            'phosphene.syntagma.lattice-test
+                           'phosphene.syntagma.morphism-test
                            'phosphene.syntagma.io.markdown-test)]
     (if (and (zero? (:fail summary)) (zero? (:error summary)))
       (do
