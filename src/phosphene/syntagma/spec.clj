@@ -200,3 +200,27 @@
   :fn (fn [{:keys [args ret]}]
         (let [{:keys [frames]} args]
           (<= ret (count frames)))))
+
+(s/def ::radius (s/int-in 1 6))
+(s/def ::forward (s/map-of any? (s/map-of any? number?)))
+(s/def ::backward (s/map-of any? (s/map-of any? number?)))
+
+(s/fdef dist/hal-matrix
+  :args (s/cat :tokens ::sequence :radius ::radius)
+  :ret (s/keys :req-un [::radius ::forward ::backward])
+  :fn (fn [{:keys [args ret]}]
+        (let [{:keys [tokens radius]} args]
+          (and (= (:radius ret) radius)
+               (map? (:forward ret))
+               (map? (:backward ret))))))
+
+(s/fdef dist/hal-vector
+  :args (s/cat :hal (s/keys :req-un [::radius ::forward ::backward]) :token any?)
+  :ret (s/map-of keyword? number?))
+
+(s/fdef dist/cosine-similarity
+  :args (s/cat :vec-a (s/with-gen (s/map-of keyword? number?)
+                        #(gen/map (gen/elements [:a :b :c :d]) (gen/choose 1 10) {:max-elements 4}))
+               :vec-b (s/with-gen (s/map-of keyword? number?)
+                        #(gen/map (gen/elements [:a :b :c :d]) (gen/choose 1 10) {:max-elements 4})))
+  :ret (s/and number? #(<= -1.0001 % 1.0001)))
