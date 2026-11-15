@@ -6,7 +6,8 @@
             [phosphene.syntagma.core :as core]
             [phosphene.syntagma.lattice :as lattice]
             [phosphene.syntagma.distribution :as dist]
-            [phosphene.syntagma.morphism :as morphism]))
+            [phosphene.syntagma.morphism :as morphism]
+            [phosphene.syntagma.textuality :as text]))
 
 ;; --- 1. Dense Generators & Alphabet Invariants ---
 
@@ -270,3 +271,37 @@
         (and (boolean? (:preserved? ret))
              (boolean? (:degraded? ret))
              (boolean? (:amplified? ret)))))
+
+;; --- 6. Function Specs: Textuality Diagnostics (Barthes / Tmesis) ---
+
+(s/fdef text/tmesis-index
+  :args (s/cat :target ::sequence :frame ::frame)
+  :ret (s/nilable (s/and double? #(<= 0.0 % 1.0))))
+
+(s/fdef text/factor-meet-ratio
+  :args (s/cat :seq-a ::sequence :seq-b ::sequence)
+  :ret (s/and double? #(<= 0.0 % 1.0)))
+
+(s/fdef text/supersequence-join-ratio
+  :args (s/cat :seq-a ::sequence :seq-b ::sequence)
+  :ret (s/and double? #(<= 0.0 % 1.0)))
+
+(s/fdef text/textuality-profile
+  :args (s/cat :sequences (s/coll-of ::sequence :kind vector?))
+  :ret (s/keys :req [:profile/lisible-index
+                     :profile/scriptible-index
+                     :profile/tmesis-mean
+                     :profile/meet-ratio-mean
+                     :profile/join-ratio-mean
+                     :profile/tier-distribution
+                     :profile/classification])
+  :fn (fn [{:keys [ret]}]
+        ;; Invariant: All indices normalized in [0.0, 1.0]
+        (and (<= 0.0 (:profile/lisible-index ret) 1.0)
+             (<= 0.0 (:profile/scriptible-index ret) 1.0)
+             (<= 0.0 (:profile/tmesis-mean ret) 1.0)
+             (<= 0.0 (:profile/meet-ratio-mean ret) 1.0)
+             (<= 0.0 (:profile/join-ratio-mean ret) 1.0)
+             (contains? #{:readerly :writerly :balanced :indeterminate}
+                        (:profile/classification ret)))))
+
