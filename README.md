@@ -98,6 +98,27 @@ Formal generative properties are enforced with `clojure.spec.alpha` and `clojure
 - **Hierarchy Monotonicity:** $\text{strict} \implies \text{loose} \implies \text{conjunction}$.
 - **Partition Invariance:** `relational-tier` yields an exact, mutually exclusive partition across `#{:strict :loose :conjunction :none}`.
 - **Join Minimality:** The shortest common supersequence strictly contains both parent sequences as loose monotonic subsequences.
+- **Normalized Textuality Bounds:** All textuality metrics (`tmesis-index`, `factor-meet-ratio`, `supersequence-join-ratio`, `lisible-index`, `scriptible-index`) remain strictly bounded within $[0.0, 1.0]$.
+
+---
+
+## Roland Barthes Textuality Diagnostics (`phosphene.syntagma.textuality`)
+
+Computes quantitative profiles distinguishing readerly (*lisible*, formulaic convergence) from writerly (*scriptible*, plural divergence) textuality and measures *tmesis* (non-contiguous skipping dispersion):
+
+```clojure
+(require '[phosphene.syntagma.textuality :as text])
+
+;; 1. Measure tmesis index (skipping dispersion)
+(text/tmesis-index [:magnetic :lines :curve] frame) ;=> 0.0 (strict)
+(text/tmesis-index [:magnetic :curve :wire] frame)   ;=> 0.6 (loose)
+
+;; 2. Comprehensive textuality profiling over corpora
+(text/textuality-profile [seq-a seq-b seq-c])
+;;=> {:profile/lisible-index 0.857,
+;;    :profile/scriptible-index 0.143,
+;;    :profile/classification :readerly, ...}
+```
 
 ---
 

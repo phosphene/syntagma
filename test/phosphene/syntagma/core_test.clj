@@ -7,6 +7,7 @@
             [clojure.test.check.properties :as prop]
             [phosphene.syntagma.core :as core]
             [phosphene.syntagma.morphism :as morphism]
+            [phosphene.syntagma.textuality :as text]
             [phosphene.syntagma.spec :as syntagma-spec]))
 
 (deftest unit-relational-tiers-test
@@ -55,7 +56,11 @@
                                       `morphism/subsequence-preserving?
                                       `morphism/conjunction-preserving?
                                       `morphism/order-preserving?
-                                      `morphism/relational-fidelity]
+                                      `morphism/relational-fidelity
+                                      `text/tmesis-index
+                                      `text/factor-meet-ratio
+                                      `text/supersequence-join-ratio
+                                      `text/textuality-profile]
                                      {:clojure.spec.test.check/opts {:num-tests 150}})]
       (doseq [res check-results]
         (let [sym (:sym res)
@@ -86,3 +91,41 @@
       ;; Verify that dense coupled generation successfully explored all 4 mutually exclusive tiers!
       (is (= #{:strict :loose :conjunction :none} @observed-tiers)
           (str "Expected all 4 tiers to be generated, but saw: " @observed-tiers)))))
+
+(deftest textuality-and-tmesis-diagnostics-test
+  (testing "Tmesis index (skipping/dispersion)"
+    (let [frame [:the :magnetic :lines :curve :around :the :conducting :wire]]
+      ;; Contiguous factor -> zero tmesis
+      (is (== 0.0 (text/tmesis-index [:magnetic :lines :curve] frame)))
+      ;; Loose subsequence -> positive tmesis
+      (let [idx (text/tmesis-index [:magnetic :curve :wire] frame)]
+        (is (pos? idx))
+        (is (<= idx 1.0)))
+      ;; Unordered conjunction -> max tmesis (1.0)
+      (is (== 1.0 (text/tmesis-index [:wire :magnetic] frame)))
+      ;; Not present -> nil
+      (is (nil? (text/tmesis-index [:galvanometer] frame)))))
+
+  (testing "Factor meet and supersequence join ratios"
+    (let [seq-a [:a :b :c :d]
+          seq-b [:b :c :e :f]]
+      (is (== 0.5 (text/factor-meet-ratio seq-a seq-b)))
+      (is (<= 0.0 (text/supersequence-join-ratio seq-a seq-b) 1.0))))
+
+  (testing "Comparative textuality profiling: readerly vs writerly"
+    (let [readerly-corpus [[:once :upon :a :time :in :the :kingdom]
+                           [:once :upon :a :time :in :the :castle]
+                           [:once :upon :a :time :in :the :forest]]
+          writerly-corpus [[:a :b :c :d :e]
+                           [:z :y :x :w :v]
+                           [:m :n :o :p :q :r]]
+          r-profile (text/textuality-profile readerly-corpus)
+          w-profile (text/textuality-profile writerly-corpus)]
+      ;; Readerly has higher lisible index and higher factor meet overlap
+      (is (pos? (:profile/lisible-index r-profile)))
+      (is (>= (:profile/meet-ratio-mean r-profile) 0.5))
+      (is (= :readerly (:profile/classification r-profile)))
+
+      ;; Writerly has divergence and lower factor meet overlap
+      (is (<= (:profile/meet-ratio-mean w-profile) 0.1))
+      (is (<= 0.0 (:profile/scriptible-index w-profile) 1.0)))))
